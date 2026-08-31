@@ -44,9 +44,14 @@ const DpMapping kMappings[] = {
     {DP_BATTERY,           1, UNIT_DIRECT,  &Readings::batteryPct},
 };
 
-// Toda grandeza do Readings, com nome legivel. Usada so pela expiracao, que
-// precisa varrer o estado inteiro - inclusive as grandezas que nao vem de um DP
-// direto (a pressao reduzida) e as que nao sao publicadas.
+// Grandezas sujeitas a expiracao, com nome legivel. Sao as que a consulta
+// periodica reconfirma: se uma delas some da consulta, sumiu de verdade.
+//
+// A direcao do vento fica DE FORA de proposito. Ela e' um DP Raw e nao volta na
+// consulta, entao nao ha como distinguir "direcao constante" de "sensor morto" -
+// e uma direcao constante e' informacao legitima, nao dado velho. A protecao
+// contra anemometro morto vem de graca: a direcao so e' publicada quando ha
+// vento, e a velocidade do vento essa sim expira.
 struct NamedValue {
   const char*   name;
   Value Readings::*field;
@@ -62,7 +67,6 @@ const NamedValue kAllValues[] = {
     {"pressao reduzida",  &Readings::baromIn},
     {"vento",             &Readings::windMph},
     {"rajada",            &Readings::gustMph},
-    {"direcao do vento",  &Readings::windDirDeg},
     {"chuva 1h",          &Readings::rainIn},
     {"chuva 24h",         &Readings::dailyRainIn},
     {"chuva do mes",      &Readings::monthlyRainIn},

@@ -26,6 +26,7 @@ namespace {
 Readings station;
 
 uint32_t nextPublishAtMs = 0;
+uint32_t nextRefreshAtMs = 0;
 uint32_t nextReconnectAtMs = 0;
 uint32_t messagesSincePublish = 0;
 
@@ -93,6 +94,20 @@ void ensureStation() {
   // A consulta semeia os valores. Ela NAO devolve os DPs do tipo Raw (entre
   // eles a direcao do vento), que chegam depois, espontaneamente.
   TuyaLan::requestSnapshot();
+  nextRefreshAtMs = millis() + REFRESH_INTERVAL_S * 1000UL;
+}
+
+// A estacao so empurra um DP quando ele MUDA: umidade parada em 98% fica horas
+// sem aparecer. Como o estado expira por idade, escutar nao basta - um valor
+// constante ficaria indistinguivel de um sensor morto. A consulta devolve todos
+// os DPs numericos independentemente de terem mudado, e e' o que devolve
+// sentido ao carimbo de hora: "a estacao ainda reporta isto".
+void refreshIfDue() {
+  if (!TuyaLan::connected()) return;
+  if (int32_t(millis() - nextRefreshAtMs) < 0) return;
+
+  TuyaLan::requestSnapshot();
+  nextRefreshAtMs = millis() + REFRESH_INTERVAL_S * 1000UL;
 }
 
 void publishNow() {
@@ -134,6 +149,7 @@ void loop() {
   }
 
   ensureStation();
+  refreshIfDue();
 
   if (TuyaLan::connected()) {
     TuyaLan::keepAlive();

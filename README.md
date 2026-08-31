@@ -27,10 +27,18 @@ A estação **empurra** os dados: manda um sensor por vez, espontaneamente, a ca
 ~30 s. O firmware escuta e vai acumulando o estado; a cada 4 minutos publica a
 última leitura de cada sensor.
 
-Cada leitura carrega a hora em que chegou. Passados 15 minutos sem atualização,
-ela é descartada e deixa de ser publicada — assim um sensor que morre (a pilha
-do módulo externo acabando, por exemplo) some do PWS em vez de congelar o último
-valor como se ainda fosse atual.
+Só que a estação empurra um sensor **apenas quando o valor muda** — umidade
+parada em 98% pode ficar horas calada. Por isso o firmware também reconsulta a
+estação a cada 2 minutos: a consulta devolve todos os sensores numéricos, tenham
+mudado ou não.
+
+Assim, **todas as grandezas vão ao PWS a cada 4 minutos**, tenham mudado ou não:
+temperatura estável é informação meteorológica, não dado velho.
+
+O que não é publicado é o que a estação **deixou de confirmar**. Cada leitura
+carrega a hora da última confirmação; passados 15 minutos sem nenhuma, ela é
+descartada — assim um sensor que morre (a pilha do módulo externo acabando, por
+exemplo) some do PWS em vez de congelar o último valor como se ainda fosse atual.
 
 ## Instalação
 

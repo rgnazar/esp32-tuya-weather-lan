@@ -108,11 +108,19 @@
 //  Faixa recomendada: 180 a 300 s.
 #define UPDATE_INTERVAL_S    240
 
+//  Intervalo entre consultas completas a estacao, em segundos.
+//  A estacao so empurra um DP quando ele MUDA - umidade parada em 98% pode
+//  ficar horas sem aparecer. Ja a consulta devolve todos os DPs numericos de uma
+//  vez, tenham mudado ou nao. E' ela que mantem o estado comprovadamente vivo e
+//  que da sentido a VALUE_MAX_AGE_S abaixo. Deve ser bem menor que ela.
+#define REFRESH_INTERVAL_S   120
+
 //  Validade de uma leitura, em segundos. Como o estado e' acumulativo, um sensor
 //  que parasse de reportar - pilha do modulo externo acabando, por exemplo -
 //  continuaria sendo publicado com o ultimo valor, como se fosse atual. Passado
 //  este tempo sem atualizacao, a grandeza e' descartada e deixa de ser enviada.
-//  Deve ser bem maior que o intervalo com que a estacao reporta (~30 s).
+//  Com a reconsulta acima, isto so dispara quando a estacao realmente para de
+//  responder - o equivalente a varias consultas seguidas sem resposta.
 #define VALUE_MAX_AGE_S      900
 
 //  Heartbeat do protocolo local. Sem ele o dispositivo encerra a conexao.

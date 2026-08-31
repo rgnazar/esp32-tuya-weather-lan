@@ -129,9 +129,34 @@ Os DPs ficam aninhados em **`data.dps`**, não em `dps` no nível de cima. Ler o
 lugar errado faz as mensagens parecerem vazias — foi exatamente o bug que
 escondeu a descoberta na primeira tentativa.
 
+**A estação só empurra um DP quando ele muda.**
+
+Isto não é evidente, porque os sensores ruidosos — temperatura, radiação solar,
+direção do vento — mudam quase sempre e dão a impressão de um envio periódico.
+Mas um valor estável simplesmente para de aparecer: numa observação de 80
+minutos, a umidade ficou travada em 98% e **não foi enviada uma única vez**,
+enquanto chegavam de 24 a 30 mensagens a cada 4 minutos.
+
+Consequência séria: **escutando, não há como distinguir um sensor parado de um
+sensor morto.** Ambos ficam calados. Só a consulta desfaz a ambiguidade, porque
+devolve todos os DPs numéricos independentemente de terem mudado.
+
 **Consequência de projeto:** o firmware mantém a conexão TCP aberta e acumula
-estado a partir das mensagens espontâneas, em vez de consultar periodicamente.
-A consulta inicial serve só para semear os valores.
+estado a partir das mensagens espontâneas — é assim que os DPs Raw chegam — mas
+**reconsulta a cada `REFRESH_INTERVAL_S`** para confirmar que o resto continua
+vivo. É essa reconsulta que dá sentido à expiração por idade (`VALUE_MAX_AGE_S`):
+sem ela, a expiração descarta sensores perfeitamente saudáveis que apenas não
+mudaram de valor.
+
+Por isso **a direção do vento está isenta de expiração**: sendo um DP Raw, ela
+não volta na consulta, e não há como distinguir uma direção constante de um
+sensor morto. Uma direção constante é informação legítima — expirá-la seria
+descartar dado bom. A proteção contra anemômetro morto vem de outro caminho: a
+direção só é publicada quando há vento, e a *velocidade* do vento essa sim é
+reconfirmada pela consulta e expira.
+
+O princípio geral: **um valor que não muda é informação, não dado velho.** Só se
+descarta o que a estação deixou de confirmar.
 
 ---
 
