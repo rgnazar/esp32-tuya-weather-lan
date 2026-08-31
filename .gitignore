@@ -1,0 +1,18 @@
+# Credenciais - NUNCA versionar.
+# Os modelos publicos sao estacaolocal/config.example.h e tools/config.example.py
+estacaolocal/config.h
+tools/config.py
+
+# Certificado do antivirus local: especifico desta maquina.
+tools/avast_root.pem
+
+# Artefatos de build da IDE Arduino
+build/
+*.bin
+*.elf
+*.hex
+
+# Python
+__pycache__/
+*.pyc
+.venv/
