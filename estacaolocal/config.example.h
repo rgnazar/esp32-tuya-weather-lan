@@ -85,7 +85,7 @@
 #define DP_RAIN_MONTH        "138"   // decimos de mm  (nao declarado na spec)
 #define DP_RAIN_EVENT        "127"   // decimos de mm  (nao declarado; so log)
 #define DP_UV_INDEX          "62"    // indice inteiro
-#define DP_LIGHT             "135"   // W/m2  (nao declarado na spec)
+#define DP_LIGHT             "135"   // decimos de W/m2 (nao declarado na spec)
 #define DP_SUNLIGHT_TIME     "137"   // minutos (nao declarado; so log)
 #define DP_BATTERY           "4"     // % (so log)
 

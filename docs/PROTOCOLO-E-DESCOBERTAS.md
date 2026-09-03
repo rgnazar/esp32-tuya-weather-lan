@@ -204,7 +204,7 @@ sensor a sensor.
 | `127` | `Rain_event` | mm | ÷10 | — (só log) |
 | `131` | `Wind_speed` | ? | ? | — |
 | `134` | **direção do vento** | graus | ver §5 | `winddir` |
-| `135` | `Light_intensity` | W/m² | ÷1 | `solarradiation` |
+| `135` | `Light_intensity` | W/m² | ÷10 | `solarradiation` |
 | `137` | `sunlight_time` | min | ÷1 | — |
 | `138` | `rain_month` | mm | ÷10 | `monthlyrainin` |
 
@@ -215,11 +215,15 @@ e `sunlight_time` **não aparecem** na especificação publicada do dispositivo
 (`GET /v1.0/iot-03/devices/{id}/specification`). Existem apenas na leitura real.
 Escalas e unidades deles são **inferidas**, não confirmadas.
 
-**`Light_intensity` é W/m², não klux.** O DP `bright_unit_convert` reporta
-`klux`, mas a lista de funções admite apenas `wm2`, e a contradição se resolve
-pela magnitude: os valores observados foram 163–235 numa tarde chuvosa. Como
-klux seria fisicamente impossível (a luz solar plena fica em torno de 100 klux);
-como W/m² é exatamente o esperado.
+**`Light_intensity` é W/m², não klux — e a escala é ÷10.** O DP
+`bright_unit_convert` reporta `klux`, mas a lista de funções admite apenas
+`wm2`, e a contradição se resolve pela magnitude. A escala foi fixada por uma
+leitura de céu aberto: **9790 → 979,0 W/m²**, que é o máximo esperado ao
+meio-dia (a constante solar é ~1361 W/m² no topo da atmosfera, e no solo o
+limite fica em torno de 1000). Sem o ÷10 o valor seria dez vezes acima do que
+fisicamente chega à superfície. Isso encaixa a leitura antiga de 163–235 numa
+tarde chuvosa como 16–23 W/m², coerente com chuva forte, e descarta klux pelo
+lado oposto: sol pleno dá ~100 klux, não 9,79.
 
 **`rain_month` = 650 → 65,0 mm**, por analogia com `rain_1h` e `rain_24h`, que
 têm escala ÷10 confirmada.

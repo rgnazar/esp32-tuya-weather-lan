@@ -39,7 +39,7 @@ const DpMapping kMappings[] = {
     {DP_RAIN_MONTH,       10, UNIT_MM,      &Readings::monthlyRainIn},
     {DP_RAIN_EVENT,       10, UNIT_MM_RAW,  &Readings::rainEventMm},
     {DP_UV_INDEX,          1, UNIT_DIRECT,  &Readings::uv},
-    {DP_LIGHT,             1, UNIT_DIRECT,  &Readings::solarRadiation},
+    {DP_LIGHT,            10, UNIT_DIRECT,  &Readings::solarRadiation},
     {DP_SUNLIGHT_TIME,     1, UNIT_DIRECT,  &Readings::sunlightMin},
     {DP_BATTERY,           1, UNIT_DIRECT,  &Readings::batteryPct},
 };
