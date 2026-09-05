@@ -22,4 +22,15 @@ PORT = 6668
 
 PROTOCOL_VERSION = "3.4"
 
+# Credenciais do projeto de nuvem da Tuya (Cloud -> Development -> projeto ->
+# Overview -> Authorization Key). Usadas apenas por tools/tuya_cloud_localkey.ps1,
+# que busca a local_key na nuvem quando ela muda - a leitura da estacao nao
+# passa por aqui. Deixe em branco para digitar no prompt do script.
+TUYA_ACCESS_ID = ""
+TUYA_ACCESS_SECRET = ""
+
+# Data center do projeto de nuvem: us (Western America, o usual no Brasil),
+# us-e, eu, eu-w, cn ou in. Tem que ser o mesmo escolhido ao criar o projeto.
+TUYA_REGION = "us"
+
 TIMEOUT_S = 8

@@ -118,6 +118,17 @@ A resposta traz, entre outros campos:
 Copie `local_key` para `LOCAL_KEY` no `config.h`. Ela tem 16 caracteres e
 costuma incluir pontuação — copie exatamente, sem aparar nada.
 
+O mesmo pode ser feito da linha de comando, sem abrir o navegador:
+
+```
+powershell -ExecutionPolicy Bypass -File tools/tuya_cloud_localkey.ps1
+```
+
+O script pede o **Access ID** e o **Access Secret** do projeto de nuvem
+(*Cloud → Development → seu projeto → Overview → Authorization Key*) — ou os lê
+de `tools/config.py`, junto com o device ID e o data center. O secret digitado
+no prompt não aparece na tela nem no histórico do shell.
+
 O campo `ip` dessa resposta é o **IP externo** da sua internet, não o da estação
 na LAN. Para esse, veja o passo seguinte.
 
