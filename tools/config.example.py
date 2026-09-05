@@ -12,6 +12,17 @@ o ESP32 ate a proxima reconexao dele.
 
 # Identificacao do dispositivo. O LOCAL_KEY e' secreto: quem o tem consegue
 # falar com o dispositivo na LAN.
+#
+# O DEVICE_ID tem 22 caracteres e comeca por "eb". Esta no console de IoT em
+# Devices -> All Devices, coluna Device ID, e e' o mesmo gwId que o
+# tuya_lan_identify.ps1 mostra para cada IP da rede. Conferir vale a pena: com
+# o ID errado a nuvem responde "permission deny" (1106), que parece falta de
+# permissao e nao engano de digitacao.
+#
+# O LOCAL_KEY tem 16 caracteres, costuma incluir pontuacao (copie sem aparar
+# nada) e MUDA toda vez que a estacao e' repareada no aplicativo. Quando o
+# firmware passar a registrar "HMAC do dispositivo nao confere", e' isso:
+# tuya_cloud_localkey.ps1 busca a chave atual na nuvem.
 DEVICE_ID = "SEU_DEVICE_ID"
 LOCAL_KEY = "SUA_LOCAL_KEY"
 
