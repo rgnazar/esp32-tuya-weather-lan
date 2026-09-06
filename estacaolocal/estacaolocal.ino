@@ -40,6 +40,37 @@ void blink(int times, int onMs) {
   }
 }
 
+// Por que a associacao falhou. O status sozinho engana: o ESP32 costuma
+// devolver WL_NO_SSID_AVAIL(1) tanto para rede inexistente quanto para rede que
+// so existe em 5 GHz - faixa que este chip nao enxerga. A varredura desfaz a
+// duvida: se o SSID nao aparece aqui, o problema nao e' a senha.
+void diagnoseWifi() {
+  Serial.println("[wifi] varrendo 2,4 GHz...");
+  int n = WiFi.scanNetworks();
+  if (n <= 0) {
+    Serial.println("[wifi] nenhuma rede visivel.");
+    return;
+  }
+
+  bool found = false;
+  for (int i = 0; i < n; i++) {
+    bool isOurs = WiFi.SSID(i) == WIFI_SSID;
+    if (isOurs) found = true;
+    Serial.printf("  %c %-24s ch %2d  %4d dBm  enc %d\n", isOurs ? '*' : ' ',
+                  WiFi.SSID(i).c_str(), WiFi.channel(i), WiFi.RSSI(i),
+                  WiFi.encryptionType(i));
+  }
+
+  if (found) {
+    Serial.printf("[wifi] '%s' existe em 2,4 GHz: suspeite da senha ou do modo "
+                  "de seguranca.\n", WIFI_SSID);
+  } else {
+    Serial.printf("[wifi] '%s' NAO aparece em 2,4 GHz: rede so em 5 GHz, oculta "
+                  "ou fora de alcance.\n", WIFI_SSID);
+  }
+  WiFi.scanDelete();
+}
+
 bool ensureWifi() {
   if (WiFi.status() == WL_CONNECTED) return true;
 
@@ -54,7 +85,8 @@ bool ensureWifi() {
   Serial.println();
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("[wifi] nao conectou");
+    Serial.printf("[wifi] nao conectou (status %d)\n", WiFi.status());
+    diagnoseWifi();
     return false;
   }
   Serial.printf("[wifi] ok, IP %s\n", WiFi.localIP().toString().c_str());
