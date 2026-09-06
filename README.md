@@ -49,7 +49,10 @@ Placa: ESP32 DevKit v1 (WROOM-32) — selecione *ESP32 Dev Module*.
 2. Preencha: Wi-Fi, IP e `local_key` da estação, credenciais do PWS e a
    **altitude de instalação** (usada na redução da pressão ao nível do mar).
    A seção seguinte mostra onde obter cada chave.
-3. Abra `estacaolocal/estacaolocal.ino` na IDE, compile e grave.
+3. Abra `estacaolocal/estacaolocal.ino` na IDE, compile e grave — ou use
+   `tools/gravar.ps1`, que faz o mesmo pela linha de comando com o `arduino-cli`
+   embutido na IDE. Placas sem auto-reset confiável pedem a sequência do botão
+   BOOT, descrita no cabeçalho do script.
 
 O `config.h` contém senhas e está no `.gitignore`. `config.example.h` é o único
 versionado, e cada parâmetro está comentado nele.
@@ -132,9 +135,23 @@ no prompt não aparece na tela nem no histórico do shell.
 O campo `ip` dessa resposta é o **IP externo** da sua internet, não o da estação
 na LAN. Para esse, veja o passo seguinte.
 
-> **A `local_key` muda se a estação for removida e pareada de novo** no
-> aplicativo. Se um dia o firmware passar a registrar `HMAC do dispositivo nao
-> confere`, é quase certo que foi isso: refaça este passo.
+> **Readicionar a estação no aplicativo troca a `local_key` — e o device ID
+> junto.** Se o firmware passar a registrar `HMAC do dispositivo nao confere`,
+> é quase certo que foi isso.
+>
+> Refazer só a chave não basta, porque o device ID anotado deixa de existir: a
+> consulta acima passa a devolver o erro **1106**, que a Tuya descreve como
+> falta de permissão e por isso manda procurar no lugar errado. Comece
+> listando os dispositivos do projeto:
+>
+> ```
+> powershell -ExecutionPolicy Bypass -File tools/tuya_cloud_localkey.ps1 -List
+> ```
+>
+> A listagem sai do endpoint `/v1.0/iot-01/associated-users/devices` e traz id,
+> nome, categoria, estado e `local_key` de tudo que está vinculado ao projeto —
+> a estação é a de categoria `qxj`. Anote o id e a chave novos, e confira o IP
+> pelo passo 5: ele também costuma mudar.
 
 ### 5. Descobrir o IP na rede local
 
@@ -185,6 +202,8 @@ e as armadilhas já pagas. Vale ler antes de mexer no firmware.
 | Arquivo | Para quê |
 |---|---|
 | `tuya_lan_identify.ps1` | acha a estação na LAN pelos broadcasts UDP |
+| `tuya_cloud_localkey.ps1` | busca a `local_key` na Tuya Cloud; `-List` mostra todos os dispositivos do projeto |
+| `gravar.ps1` | compila e grava o firmware pela linha de comando |
 | `serial_monitor.ps1` | lê o monitor serial (`-Port COM3 -Seconds 90`) |
 | `gen_certificates.ps1` | regera `certificates.h` se o WU trocar de CA |
 | `tuya_local.py` | leitura pontual da estação pelo PC |
@@ -215,9 +234,35 @@ Sinais de que algo está errado:
 - **Reconexões frequentes** — a estação encerra a conexão. Verifique se outro
   cliente (um script Python, o app) está falando com ela ao mesmo tempo.
 - **`HMAC do dispositivo nao confere`** — `LOCAL_KEY` errada.
+- **`[lan] conexao recusada`, repetidamente, com o IP certo e a porta 6668
+  aberta** — suspeite de **isolamento de clientes** no ponto de acesso, não do
+  firmware. Veja a seção seguinte.
+- **`[wifi] nao conectou (status N)`** — o firmware varre o 2,4 GHz em seguida e
+  lista as redes que enxerga, marcando a sua com `*`. Se o seu SSID **não
+  aparece**, o problema não é a senha: a rede está só em 5 GHz (faixa que o
+  ESP32 não enxerga), oculta, ou fora de alcance. Se aparece, olhe a senha e o
+  modo de segurança.
 - **`[expira] ... descartado`** — aquele sensor parou de reportar.
 - **`[wu] recusado`** — o Weather Underground rejeitou; a resposta dele vem na
   mesma linha.
+
+### Isolamento de clientes no ponto de acesso
+
+Este projeto depende de dois clientes Wi-Fi conversarem entre si: o ESP32 e a
+estação. Muitos pontos de acesso trazem ligado um recurso — *AP Isolation*,
+*Client Isolation*, *Isolamento sem fio* — que bloqueia exatamente isso. O
+sintoma é o ESP32 associar no Wi-Fi normalmente e então levar `conexao recusada`
+em toda tentativa na porta 6668, indefinidamente.
+
+Confunde porque parece problema de chave ou de IP, e não é. **O teste que
+resolve a dúvida em um minuto:** rode `tools/tuya_local.py` de um PC ligado por
+**cabo**, com o ESP32 ainda tentando. Se o PC conecta e negocia a sessão com a
+mesma `local_key` e o mesmo IP que o ESP32 está usando, o que separa os dois é
+só o caminho — e a diferença é o rádio. É isolamento.
+
+A correção é no ponto de acesso, não no firmware: desligue o isolamento, ou
+coloque os dois na mesma rede se um deles caiu num SSID de convidados ou numa
+VLAN de IoT.
 
 ## Autoria
 
