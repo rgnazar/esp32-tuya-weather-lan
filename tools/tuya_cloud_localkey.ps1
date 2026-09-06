@@ -13,8 +13,13 @@
 #
 # Nao requer instalar nada: usa o HMAC-SHA256 do proprio Windows.
 #
+# Readicionar a estacao no aplicativo troca tambem o device ID, e ai' o antigo
+# passa a responder 1106. Nesse caso comece pelo -List, que mostra os
+# dispositivos do projeto com id, categoria e local_key.
+#
 # Uso:
 #   powershell -ExecutionPolicy Bypass -File tools/tuya_cloud_localkey.ps1
+#   powershell -ExecutionPolicy Bypass -File tools/tuya_cloud_localkey.ps1 -List
 #   powershell -ExecutionPolicy Bypass -File tools/tuya_cloud_localkey.ps1 `
 #       -AccessId xxxx -DeviceId eb0000... -Region us
 #
@@ -30,7 +35,11 @@ param(
     # (Western America) - o mesmo escolhido ao criar o projeto. Aceita tanto o
     # codigo curto quanto o nome exibido no console ('Western America Data
     # Center'), que e' o que se costuma copiar de la.
-    [string]$Region
+    [string]$Region,
+    # Lista todos os dispositivos do projeto em vez de consultar um so'. Util
+    # quando a estacao foi readicionada no aplicativo: o device ID muda, e o
+    # antigo passa a devolver erro 1106.
+    [switch]$List
 )
 
 $ErrorActionPreference = 'Stop'
@@ -86,7 +95,7 @@ if (-not $endpoints.ContainsKey($normalized)) {
 $Region = $normalized
 
 if (-not $AccessId)  { $AccessId  = Read-Host 'Access ID do projeto de nuvem' }
-if (-not $DeviceId)  { $DeviceId  = Read-Host 'Device ID da estacao' }
+if (-not $DeviceId -and -not $List) { $DeviceId = Read-Host 'Device ID da estacao' }
 if (-not $AccessSecret) {
     $secure = Read-Host 'Access Secret (nao e'' exibido)' -AsSecureString
     $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
@@ -94,8 +103,11 @@ if (-not $AccessSecret) {
     finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
 }
 
-if (-not $AccessId -or -not $AccessSecret -or -not $DeviceId) {
-    throw 'Access ID, Access Secret e Device ID sao obrigatorios.'
+if (-not $AccessId -or -not $AccessSecret) {
+    throw 'Access ID e Access Secret sao obrigatorios.'
+}
+if (-not $DeviceId -and -not $List) {
+    throw 'Informe o Device ID, ou use -List para ver os dispositivos do projeto.'
 }
 
 $base = $endpoints[$Region]
@@ -165,9 +177,30 @@ function Invoke-TuyaGet([string]$Path, [string]$Token) {
 # ---------------------------------------------------------------- consulta
 
 Write-Output "Data center: $Region ($base)"
-Write-Output "Device:      $DeviceId`n"
+Write-Output "Device:      $(if ($List) { '(listando todos)' } else { $DeviceId })`n"
 
 $token = (Invoke-TuyaGet '/v1.0/token?grant_type=1' '').access_token
+
+if ($List) {
+    # Lista os dispositivos das contas de aplicativo vinculadas ao projeto
+    # (Cloud -> Devices -> Link App Account). E' por aqui que se descobre o novo
+    # device ID depois de readicionar a estacao. A categoria da estacao e' 'qxj'.
+    $devices = (Invoke-TuyaGet '/v1.0/iot-01/associated-users/devices?page_size=100' $token).devices
+    if (-not $devices) { throw 'Nenhum dispositivo associado. A conta do app esta vinculada ao projeto?' }
+
+    $devices |
+        Sort-Object category, name |
+        Select-Object @{n='id';e={$_.id}},
+                      @{n='nome';e={$_.name}},
+                      @{n='cat';e={$_.category}},
+                      @{n='online';e={$_.online}},
+                      @{n='local_key';e={$_.local_key}} |
+        Format-Table -AutoSize | Out-String -Width 200 | Write-Output
+
+    Write-Output "Total: $($devices.Count) dispositivo(s). A estacao meteorologica e' a de categoria 'qxj'."
+    return
+}
+
 $device = Invoke-TuyaGet "/v1.0/devices/$DeviceId" $token
 
 if (-not $device.local_key) {
